@@ -70,7 +70,6 @@ const AppContent: React.FC = () => {
     if (state.currentAffiliate) {
          return (
             <>
-                {/* FIX: Corrected typo from `onTitle-click` to `onTitleClick` to match the component's prop type. */}
                 <Header onTitleClick={() => {}} onLogoutClick={handleAffiliateLogout} isLoggedIn={true} name={`Panel de ${state.currentAffiliate.customerName.split(' ')[0]}`} />
                 <AffiliateView />
             </>
@@ -87,7 +86,7 @@ const AppContent: React.FC = () => {
     );
 };
 
-const App: React.FC = () => {
+export const App: React.FC = () => {
   return (
     <AppProvider>
         <div className="min-h-screen bg-slate-100 font-sans">
@@ -96,5 +95,3 @@ const App: React.FC = () => {
     </AppProvider>
   );
 };
-
-export default App;
