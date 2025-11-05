@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 
 const StoreIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (

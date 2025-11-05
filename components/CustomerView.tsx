@@ -1,8 +1,8 @@
-import React, { useState, useContext, useEffect, useMemo, useRef, FC } from 'react';
-import { AppContext } from '../context/AppContext.tsx';
-import { Order, PaymentMethod, OrderStatus, ReferralStatus, User, Referral, AffiliateStatus, Affiliate } from '../types.ts';
-import { MIN_ORDER_FOR_REFERRAL, MIN_ORDER_FOR_COUPON, REWARD_TORTILLAS } from '../constants.ts';
-import { generateReferralCode } from '../utils.ts';
+import React, { useState, useContext, useEffect, useMemo, useRef } from 'react';
+import { AppContext } from '../context/AppContext';
+import { Order, PaymentMethod, OrderStatus, ReferralStatus, User, Referral, AffiliateStatus, Affiliate } from '../types';
+import { MIN_ORDER_FOR_REFERRAL, MIN_ORDER_FOR_COUPON, REWARD_TORTILLAS } from '../constants';
+import { generateReferralCode } from '../utils';
 import ConfirmationModal from './ConfirmationModal.tsx';
 import AffiliateApplicationModal from './AffiliateApplicationModal.tsx';
 import CashIcon from './icons/CashIcon.tsx';
@@ -78,7 +78,7 @@ const getNextOpeningTime = (affiliate: Affiliate | null): string => {
 };
 
 
-const CustomerView: FC<CustomerViewProps> = ({ onAffiliateLoginClick }) => {
+const CustomerView: React.FC<CustomerViewProps> = ({ onAffiliateLoginClick }) => {
   const { state, dispatch } = useContext(AppContext);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<HTMLDivElement>(null);
@@ -525,7 +525,7 @@ const CustomerView: FC<CustomerViewProps> = ({ onAffiliateLoginClick }) => {
   const inputClasses = "shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:ring-2 bg-gray-50";
   const errorClasses = "text-red-500 text-xs italic mt-1";
 
-  const TabButton: FC<{
+  const TabButton: React.FC<{
     isActive: boolean;
     onClick: () => void;
     children: React.ReactNode;

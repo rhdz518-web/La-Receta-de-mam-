@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
-import { AppContext } from '../context/AppContext.tsx';
-import { Affiliate, AffiliateStatus } from '../types.ts';
+import { AppContext } from '../context/AppContext';
+import { Affiliate, AffiliateStatus } from '../types';
 
 interface AffiliateApplicationModalProps {
   isVisible: boolean;
@@ -87,7 +87,7 @@ const AffiliateApplicationModal: React.FC<AffiliateApplicationModalProps> = ({ i
                 <p className="text-gray-500 text-sm mt-1">Gana comisiones por cada venta.</p>
             </div>
           <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 -mt-2 -mr-2">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>

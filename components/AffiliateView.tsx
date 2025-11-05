@@ -445,23 +445,6 @@ const AffiliateView: React.FC = () => {
         const hasPendingRequest = inventoryChanges.some(c => c.status === InventoryChangeStatus.Pending && c.amount > 0);
         return (
             <div className="space-y-6">
-                {pendingDeliveries.length > 0 && (
-                    <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-800 p-4 rounded-md shadow-sm" role="alert">
-                       <div className="flex">
-                           <div className="py-1"><InformationCircleIcon className="h-6 w-6 mr-4" /></div>
-                           <div>
-                               <p className="font-bold">¡Tienes entregas de inventario pendientes!</p>
-                               <p className="text-sm mb-2">El administrador aprobó {pendingDeliveries.length} solicitud(es). Ve a la pestaña de inventario para confirmar que las has recibido.</p>
-                               <button
-                                   onClick={() => setActiveTab('inventory')}
-                                   className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-1 px-3 rounded text-sm transition-colors shadow-sm"
-                               >
-                                   Ir a Inventario
-                               </button>
-                           </div>
-                       </div>
-                   </div>
-                )}
                 {lowInventoryOrders.length > 0 && (
                     <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md shadow-sm mb-6" role="alert">
                         <div className="flex">

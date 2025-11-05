@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 
 const ChartBarIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
