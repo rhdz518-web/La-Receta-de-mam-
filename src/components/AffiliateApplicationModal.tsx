@@ -95,7 +95,7 @@ const AffiliateApplicationModal: React.FC<AffiliateApplicationModalProps> = ({ i
         
         {isSubmitted ? (
             <div className="text-center py-8">
-                <svg className="mx-auto h-12 w-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="mx-auto h-12 w-12 text-green-500" fill="none" viewBox="0 0 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <h3 className="mt-4 text-xl font-bold text-brand-dark">¡Solicitud Enviada!</h3>

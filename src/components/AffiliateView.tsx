@@ -236,12 +236,10 @@ const AffiliateView: React.FC = () => {
     const [showBankSuccess, setShowBankSuccess] = useState(false);
     const [currentTime, setCurrentTime] = useState(Date.now());
 
-    // This effect creates an interval that updates the current time every minute.
-    // This is used to re-render the component and check if the "Notify Admin" button should be displayed.
     useEffect(() => {
         const timer = setInterval(() => {
             setCurrentTime(Date.now());
-        }, 60000); // Update every 60 seconds
+        }, 60000); 
         return () => clearInterval(timer);
     }, []);
 
@@ -276,20 +274,12 @@ const AffiliateView: React.FC = () => {
     const lowInventoryOrders = useMemo(() => {
         if (!currentAffiliate) return [];
         return affiliateOrders.filter(o => o.isLowInventoryOrder && o.status === OrderStatus.Active)
-    }, [affiliateOrders, currentAffiliate]);
+    }, [affiliateOrders]);
     
     const inventoryChanges = useMemo(() => {
         if (!currentAffiliate) return [];
         return state.inventoryChanges.filter(c => c.affiliateId === currentAffiliate.id)
             .sort((a,b) => b.timestamp - a.timestamp);
-    }, [state.inventoryChanges, currentAffiliate]);
-
-    const pendingDeliveries = useMemo(() => {
-        if (!currentAffiliate) return [];
-        return state.inventoryChanges.filter(c =>
-            c.affiliateId === currentAffiliate.id &&
-            c.status === InventoryChangeStatus.Approved
-        );
     }, [state.inventoryChanges, currentAffiliate]);
 
     const stats = useMemo(() => {
@@ -332,19 +322,19 @@ const AffiliateView: React.FC = () => {
         return <div className="text-center p-8">Error: No se encontró el afiliado. Por favor, vuelve a iniciar sesión.</div>;
     }
 
-    const handleUpdateOrderStatus = (orderId: string, status: OrderStatus) => {
-        dispatch({ type: 'UPDATE_ORDER_STATUS', payload: { orderId, status } });
+    const handleUpdateOrderStatus = (order: Order, status: OrderStatus) => {
+        dispatch({ type: 'UPDATE_ORDER_STATUS', payload: { order, status } });
     };
 
     const handleToggleDelivery = () => {
         if (currentAffiliateData) {
-            dispatch({ type: 'TOGGLE_AFFILIATE_DELIVERY', payload: { affiliateId: currentAffiliateData.id } });
+            dispatch({ type: 'TOGGLE_AFFILIATE_DELIVERY', payload: { affiliate: currentAffiliateData } });
         }
     };
     
     const handleToggleTemporaryClosed = () => {
         if(currentAffiliateData) {
-            dispatch({ type: 'TOGGLE_TEMPORARY_CLOSED', payload: { affiliateId: currentAffiliateData.id } });
+            dispatch({ type: 'TOGGLE_TEMPORARY_CLOSED', payload: { affiliate: currentAffiliateData } });
         }
     };
 
@@ -363,25 +353,15 @@ const AffiliateView: React.FC = () => {
 
     const handleSaveChanges = () => {
         const cost = parseFloat(editedDeliveryCost);
-        if (isNaN(cost) || cost < 0) {
-            // Future improvement: Show an error to the user
-            return;
-        }
+        if (isNaN(cost) || cost < 0) { return; }
         dispatch({
             type: 'UPDATE_AFFILIATE_SETTINGS',
-            payload: {
-                affiliateId: currentAffiliateData.id,
-                address: editedAddress,
-                deliveryCost: cost
-            }
+            payload: { affiliateId: currentAffiliateData.id, address: editedAddress, deliveryCost: cost }
         });
         if (editedSchedule) {
             dispatch({ 
                 type: 'UPDATE_AFFILIATE_SCHEDULE', 
-                payload: {
-                    affiliateId: currentAffiliateData.id,
-                    schedule: editedSchedule
-                }
+                payload: { affiliateId: currentAffiliateData.id, schedule: editedSchedule }
             });
         }
         setShowSettingsSuccess(true);
@@ -391,10 +371,7 @@ const AffiliateView: React.FC = () => {
      const handleSaveBankDetails = () => {
         dispatch({
             type: 'UPDATE_AFFILIATE_BANK_DETAILS',
-            payload: {
-                affiliateId: currentAffiliateData.id,
-                bankDetails: editedBankDetails,
-            }
+            payload: { affiliateId: currentAffiliateData.id, bankDetails: editedBankDetails }
         });
         setShowBankSuccess(true);
         setTimeout(() => setShowBankSuccess(false), 3000);
@@ -440,12 +417,17 @@ const AffiliateView: React.FC = () => {
         }
     };
 
+    const handleConfirmInventoryChange = (change: InventoryChange) => {
+         dispatch({ type: 'AFFILIATE_CONFIRM_INVENTORY_CHANGE', payload: { change } });
+    }
+
     const renderDashboard = () => {
         const isOpen = isAffiliateCurrentlyOpen(currentAffiliateData);
         const hasPendingRequest = inventoryChanges.some(c => c.status === InventoryChangeStatus.Pending && c.amount > 0);
+        const pendingDeliveries = inventoryChanges.filter(c => c.status === InventoryChangeStatus.Approved);
         return (
             <div className="space-y-6">
-                {pendingDeliveries.length > 0 && (
+                 {pendingDeliveries.length > 0 && (
                     <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-800 p-4 rounded-md shadow-sm" role="alert">
                        <div className="flex">
                            <div className="py-1"><InformationCircleIcon className="h-6 w-6 mr-4" /></div>
@@ -463,7 +445,7 @@ const AffiliateView: React.FC = () => {
                    </div>
                 )}
                 {lowInventoryOrders.length > 0 && (
-                    <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md shadow-sm mb-6" role="alert">
+                    <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md shadow-sm" role="alert">
                         <div className="flex">
                             <div className="py-1"><ExclamationTriangleIcon className="h-6 w-6 text-red-500 mr-4" /></div>
                             <div>
@@ -479,8 +461,8 @@ const AffiliateView: React.FC = () => {
                         </div>
                     </div>
                 )}
-                {currentAffiliateData.inventory <= 20 && (
-                     <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md shadow-sm mb-6" role="alert">
+                {currentAffiliateData.inventory <= 20 && lowInventoryOrders.length === 0 && (
+                     <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md shadow-sm" role="alert">
                         <div className="flex">
                             <div className="py-1">
                                 <svg className="fill-current h-6 w-6 text-yellow-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zM9 13h2v-2H9v2zm0-4h2V5H9v4z"/></svg>
@@ -561,7 +543,6 @@ const AffiliateView: React.FC = () => {
             <div className="bg-white p-6 rounded-xl shadow-md space-y-8">
                 <div>
                     <h3 className="text-2xl font-bold text-brand-dark mb-2">Ajustes de Vendedor</h3>
-                    {/* Quick Close Button */}
                     <div className="mt-6 p-4 rounded-lg bg-red-50 border border-red-200">
                         <div className="flex items-center justify-between">
                             <div>
@@ -582,7 +563,6 @@ const AffiliateView: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Bank Details */}
                 <div className="pt-8 border-t">
                     <h4 className="text-xl font-bold text-brand-dark mb-4">Mis Datos Bancarios</h4>
                     <p className="text-sm text-gray-500 mb-4">Esta información se usará para que el administrador te pague tus comisiones y cobros por transferencia.</p>
@@ -606,7 +586,6 @@ const AffiliateView: React.FC = () => {
                     </button>
                 </div>
                 
-                {/* Schedule */}
                 <div className="pt-8 border-t">
                     <h4 className="text-xl font-bold text-brand-dark mb-4">Horario de la Tienda</h4>
                     <div className="space-y-3">
@@ -642,7 +621,6 @@ const AffiliateView: React.FC = () => {
                     </div>
                 </div>
 
-                {/* General Settings */}
                 <div className="space-y-4 pt-8 border-t">
                      <div>
                         <h4 className="text-xl font-bold text-brand-dark mb-4">Ajustes Generales</h4>
@@ -713,8 +691,6 @@ const AffiliateView: React.FC = () => {
                     <div className="space-y-4">
                         {activeOrders.length > 0 ? activeOrders.slice().sort((a,b) => b.timestamp - a.timestamp).map(order => {
                             const showNotifyButton = order.status === OrderStatus.PendingConfirmation && (currentTime - order.timestamp) > 10 * 60 * 1000;
-                            
-                            // Recalculate from ground truth for robustness
                             const subtotal = order.quantity * state.tortillaPrice;
                             const deliveryFee = Number(order.deliveryFeeApplied || 0);
                             const discount = Number(order.discountApplied || 0);
@@ -797,8 +773,8 @@ const AffiliateView: React.FC = () => {
                                     )}
                                     {order.status === OrderStatus.Active ? (
                                         <div className="flex justify-end gap-2 mt-4">
-                                            <button onClick={() => handleUpdateOrderStatus(order.id, OrderStatus.Finished)} className="bg-green-100 text-green-700 px-3 py-1 rounded text-sm font-semibold">Finalizar</button>
-                                            <button onClick={() => handleUpdateOrderStatus(order.id, OrderStatus.Cancelled)} className="bg-red-100 text-red-700 px-3 py-1 rounded text-sm font-semibold">Cancelar</button>
+                                            <button onClick={() => handleUpdateOrderStatus(order, OrderStatus.Finished)} className="bg-green-100 text-green-700 px-3 py-1 rounded text-sm font-semibold">Finalizar</button>
+                                            <button onClick={() => handleUpdateOrderStatus(order, OrderStatus.Cancelled)} className="bg-red-100 text-red-700 px-3 py-1 rounded text-sm font-semibold">Cancelar</button>
                                         </div>
                                     ) : (
                                         <div className="mt-4 text-center bg-yellow-50 text-yellow-800 p-3 rounded-md text-sm">
@@ -940,7 +916,7 @@ const AffiliateView: React.FC = () => {
                                 <span className={`px-2 py-1 rounded-full text-xs font-semibold self-center sm:self-auto ${getStatusClass(change.status)}`}>{change.status}</span>
                                 {change.status === InventoryChangeStatus.Approved && (
                                     <button 
-                                        onClick={() => dispatch({ type: 'AFFILIATE_CONFIRM_INVENTORY_CHANGE', payload: { changeId: change.id } })}
+                                        onClick={() => handleConfirmInventoryChange(change)}
                                         className="bg-green-500 text-white px-3 py-1 rounded text-sm font-semibold"
                                     >
                                         Confirmar Recibido
@@ -1000,8 +976,8 @@ const AffiliateView: React.FC = () => {
                 <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                      <NavTabButton tabName="dashboard" icon={<ChartBarIcon className="w-5 h-5"/>}>Dashboard</NavTabButton>
                      <NavTabButton tabName="orders" icon={<ClipboardDocumentListIcon className="w-5 h-5"/>}>Pedidos</NavTabButton>
-                     <NavTabButton tabName="history" icon={<ArchiveBoxIcon className="w-5 h-5"/>}>Ventas Finalizadas</NavTabButton>
-                     <NavTabButton tabName="cashouts" icon={<CurrencyDollarIcon className="w-5 h-5"/>}>Cortes de Caja</NavTabButton>
+                     <NavTabButton tabName="history" icon={<ArchiveBoxIcon className="w-5 h-5"/>}>Ventas</NavTabButton>
+                     <NavTabButton tabName="cashouts" icon={<CurrencyDollarIcon className="w-5 h-5"/>}>Cortes</NavTabButton>
                      <NavTabButton tabName="inventory" icon={<StoreIcon className="w-5 h-5"/>}>Inventario</NavTabButton>
                      <NavTabButton tabName="settings" icon={<CogIcon className="w-5 h-5"/>}>Ajustes</NavTabButton>
                 </div>

@@ -1,19 +1,13 @@
 // @ts-nocheck
 
-// NOTE: Replace these placeholder values with your own Firebase project configuration.
-// Go to your Firebase project console:
-// 1. Click the gear icon -> Project settings.
-// 2. In the "General" tab, scroll down to "Your apps".
-// 3. If you haven't created a web app, add one.
-// 4. Find your web app and click on the "SDK setup and configuration" section, select "Config".
-// 5. Copy the 'firebaseConfig' object and paste it here.
+// User's provided Firebase project configuration.
 const firebaseConfig = {
-  apiKey: "AIzaSy...YOUR-API-KEY",
-  authDomain: "your-project-id.firebaseapp.com",
-  projectId: "your-project-id",
-  storageBucket: "your-project-id.appspot.com",
-  messagingSenderId: "your-sender-id",
-  appId: "your-app-id"
+  apiKey: "AIzaSyCWurxet32JE4noxOzMtyS-EttxyWnRmzs",
+  authDomain: "receta-bc982.firebaseapp.com",
+  projectId: "receta-bc982",
+  storageBucket: "receta-bc982.appspot.com",
+  messagingSenderId: "1033564259805",
+  appId: "1:1033564259805:web:8ada7ff1631064c31c2234"
 };
 
 // Initialize Firebase

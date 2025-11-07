@@ -1,6 +1,6 @@
 import React, { createContext, useReducer, useEffect, Dispatch, ReactNode } from 'react';
 import { AppState, Order, Affiliate, InventoryChange, OrderStatus, AffiliateStatus, InventoryChangeStatus, Referral, Coupon, ReferralStatus, User, CashOut, CashOutStatus } from '../types';
-import { DEFAULT_COMMISSION_PER_TORTILLA_CENTS, REWARD_TORTILLAS, APP_VERSION, TORTILLA_PRICE } from '../constants';
+import { DEFAULT_COMMISSION_PER_TORTILLA_CENTS, REWARD_TORTILLAS, TORTILLA_PRICE } from '../constants';
 import { db, increment } from '../firebase';
 
 // Define action types
@@ -11,25 +11,25 @@ type Action =
     | { type: 'AFFILIATE_LOGOUT' }
     | { type: 'ADD_OR_UPDATE_USER'; payload: User }
     | { type: 'ADD_ORDER'; payload: Order }
-    | { type: 'UPDATE_ORDER_STATUS'; payload: { orderId: string; status: OrderStatus, order?: Order } }
+    | { type: 'UPDATE_ORDER_STATUS'; payload: { order: Order; status: OrderStatus } }
     | { type: 'CONFIRM_TRANSFER_PAYMENT'; payload: { orderId: string } }
     | { type: 'ADD_REFERRAL'; payload: Referral }
     | { type: 'COMPLETE_REFERRAL'; payload: { referral: Referral; couponCode: string } }
-    | { type: 'TOGGLE_COUPON_STATUS'; payload: { couponCode: string, currentStatus: boolean } }
+    | { type: 'TOGGLE_COUPON_STATUS'; payload: { coupon: Coupon } }
     | { type: 'DELETE_COUPON'; payload: { couponCode: string } }
     | { type: 'APPLY_FOR_AFFILIATE'; payload: Affiliate }
     | { type: 'UPDATE_AFFILIATE_STATUS'; payload: { affiliateId: string; status: AffiliateStatus } }
-    | { type: 'TOGGLE_AFFILIATE_DELIVERY'; payload: { affiliateId: string, currentStatus: boolean } }
+    | { type: 'TOGGLE_AFFILIATE_DELIVERY'; payload: { affiliate: Affiliate } }
     | { type: 'UPDATE_AFFILIATE_SETTINGS'; payload: { affiliateId: string; address: string; deliveryCost: number } }
     | { type: 'UPDATE_AFFILIATE_SCHEDULE'; payload: { affiliateId: string; schedule: Affiliate['schedule'] } }
-    | { type: 'TOGGLE_TEMPORARY_CLOSED'; payload: { affiliateId: string, currentStatus: boolean } }
+    | { type: 'TOGGLE_TEMPORARY_CLOSED'; payload: { affiliate: Affiliate } }
     | { type: 'DELETE_AFFILIATE'; payload: { affiliateId: string } }
     | { type: 'ADD_INVENTORY_CHANGE'; payload: InventoryChange }
     | { type: 'RESOLVE_INVENTORY_CHANGE'; payload: { changeId: string; status: InventoryChangeStatus.Approved | InventoryChangeStatus.Rejected } }
     | { type: 'AFFILIATE_CONFIRM_INVENTORY_CHANGE'; payload: { change: InventoryChange } }
     | { type: 'CANCEL_INVENTORY_REQUEST'; payload: { changeId: string } }
     | { type: 'UPDATE_SETTINGS'; payload: Partial<AppState> }
-    | { type: 'LOAD_STATE'; payload: AppState }
+    | { type: 'LOAD_STATE' }
     | { type: 'SET_SUCCESS_MESSAGE'; payload: string }
     | { type: 'CLEAR_SUCCESS_MESSAGE' }
     | { type: 'UPDATE_AFFILIATE_BANK_DETAILS'; payload: { affiliateId: string; bankDetails: string } }
@@ -105,11 +105,8 @@ const appReducer = (state: AppState, action: Action): AppState => {
         }
 
         case 'UPDATE_ORDER_STATUS': {
-            const { orderId, status, order } = action.payload;
-            if (!order) return state;
-
-            // This action now performs multiple writes.
-            const orderRef = db.collection('orders').doc(orderId);
+            const { order, status } = action.payload;
+            const orderRef = db.collection('orders').doc(order.id);
             orderRef.update({ status });
 
             if (status === OrderStatus.Finished) {
@@ -117,7 +114,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
                 affiliateRef.update({ inventory: increment(-order.quantity) });
             }
             
-            const referral = state.referrals.find(r => r.refereeOrderId === orderId);
+            const referral = state.referrals.find(r => r.refereeOrderId === order.id);
             if(referral) {
                  let newStatus = referral.status;
                  if (status === OrderStatus.Cancelled) newStatus = ReferralStatus.Cancelled;
@@ -141,7 +138,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
             const { referral, couponCode } = action.payload;
             db.collection('referrals').doc(referral.id).update({ status: ReferralStatus.Completed });
 
-            const newCoupon: Coupon = {
+            const newCoupon: Omit<Coupon, 'id'> = {
                 code: couponCode,
                 isUsed: false,
                 rewardAmount: REWARD_TORTILLAS * state.tortillaPrice,
@@ -153,7 +150,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
         }
 
         case 'TOGGLE_COUPON_STATUS':
-            db.collection('coupons').doc(action.payload.couponCode).update({ isActive: !action.payload.currentStatus });
+            db.collection('coupons').doc(action.payload.coupon.code).update({ isActive: !action.payload.coupon.isActive });
             return state;
 
         case 'DELETE_COUPON':
@@ -171,7 +168,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
             return state;
         
         case 'TOGGLE_AFFILIATE_DELIVERY':
-            db.collection('affiliates').doc(action.payload.affiliateId).update({ hasDeliveryService: !action.payload.currentStatus });
+            db.collection('affiliates').doc(action.payload.affiliate.id).update({ hasDeliveryService: !action.payload.affiliate.hasDeliveryService });
             return state;
 
         case 'UPDATE_AFFILIATE_SETTINGS':
@@ -192,8 +189,9 @@ const appReducer = (state: AppState, action: Action): AppState => {
             return state;
 
         case 'TOGGLE_TEMPORARY_CLOSED': {
-            db.collection('affiliates').doc(action.payload.affiliateId).update({ isTemporarilyClosed: !action.payload.currentStatus });
-            const message = !action.payload.currentStatus ? 'Has cerrado tu tienda temporalmente.' : '¡Has abierto tu tienda! Ya puedes recibir pedidos.';
+            const { affiliate } = action.payload;
+            db.collection('affiliates').doc(affiliate.id).update({ isTemporarilyClosed: !affiliate.isTemporarilyClosed });
+            const message = !affiliate.isTemporarilyClosed ? 'Has cerrado tu tienda temporalmente.' : '¡Has abierto tu tienda! Ya puedes recibir pedidos.';
             return { ...state, successMessage: message };
         }
         
@@ -206,9 +204,9 @@ const appReducer = (state: AppState, action: Action): AppState => {
             db.collection('inventoryChanges').doc(id).set(changeData);
             if (changeData.status !== InventoryChangeStatus.Pending) { // Admin adjustment
                  return { ...state, successMessage: 'Ajuste de inventario enviado para confirmación del vendedor.' };
-            } else { // Affiliate request
-                 return { ...state, successMessage: `Solicitud de ${changeData.amount} tortillas enviada.` };
             }
+            // Affiliate request message is set in component
+            return state;
         }
         
         case 'RESOLVE_INVENTORY_CHANGE':
@@ -232,7 +230,6 @@ const appReducer = (state: AppState, action: Action): AppState => {
             const { id, ...cashOutData } = action.payload;
             db.collection('cashOuts').doc(id).set(cashOutData);
 
-            // Mark orders as settled in a batch
             const batch = db.batch();
             cashOutData.ordersCoveredIds.forEach(orderId => {
                 const orderRef = db.collection('orders').doc(orderId);
@@ -258,9 +255,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
             return { ...state, successMessage: null };
             
         case 'LOAD_STATE': {
-             // This is now complex. A proper restore would require batch writes to Firestore.
-             // For now, we'll just show a message that this feature is disabled.
-             alert("La restauración desde un archivo de respaldo está deshabilitada al usar la base de datos en la nube para prevenir la sobreescritura de datos.");
+             alert("La restauración desde un archivo está deshabilitada al usar la base de datos en la nube para prevenir la sobreescritura de datos.");
              return state;
         }
 
