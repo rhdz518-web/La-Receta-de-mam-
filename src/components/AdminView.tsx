@@ -1,25 +1,25 @@
 import React, { useState, useContext, useMemo, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
 import { AppState, Order, Affiliate, InventoryChange, OrderStatus, AffiliateStatus, InventoryChangeStatus, Referral, Coupon, ReferralStatus, PaymentMethod, TabVisibility, CashOut, CashOutStatus } from '../types';
-import StatCard from './StatCard.tsx';
-import CashIcon from './icons/CashIcon.tsx';
-import ClipboardDocumentListIcon from './icons/ClipboardDocumentListIcon.tsx';
-import UserGroupIcon from './icons/UserGroupIcon.tsx';
-import StoreIcon from './icons/StoreIcon.tsx';
-import CogIcon from './icons/CogIcon.tsx';
-import ChartBarIcon from './icons/ChartBarIcon.tsx';
-import ClockIcon from './icons/ClockIcon.tsx';
-import ArrowDownTrayIcon from './icons/ArrowDownTrayIcon.tsx';
-import ArrowUpTrayIcon from './icons/ArrowUpTrayIcon.tsx';
-import DocumentArrowDownIcon from './icons/DocumentArrowDownIcon.tsx';
+import StatCard from './StatCard';
+import CashIcon from './icons/CashIcon';
+import ClipboardDocumentListIcon from './icons/ClipboardDocumentListIcon';
+import UserGroupIcon from './icons/UserGroupIcon';
+import StoreIcon from './icons/StoreIcon';
+import CogIcon from './icons/CogIcon';
+import ChartBarIcon from './icons/ChartBarIcon';
+import ClockIcon from './icons/ClockIcon';
+import ArrowDownTrayIcon from './icons/ArrowDownTrayIcon';
+import ArrowUpTrayIcon from './icons/ArrowUpTrayIcon';
+import DocumentArrowDownIcon from './icons/DocumentArrowDownIcon';
 import { generateUniqueCouponCode, downloadCSV } from '../utils';
-import WhatsAppIcon from './icons/WhatsAppIcon.tsx';
-import GiftIcon from './icons/GiftIcon.tsx';
-import KeyIcon from './icons/KeyIcon.tsx';
-import TicketIcon from './icons/TicketIcon.tsx';
-import ImagePreviewModal from './ImagePreviewModal.tsx';
-import CurrencyDollarIcon from './icons/CurrencyDollarIcon.tsx';
-import ExclamationTriangleIcon from './icons/ExclamationTriangleIcon.tsx';
+import WhatsAppIcon from './icons/WhatsAppIcon';
+import GiftIcon from './icons/GiftIcon';
+import KeyIcon from './icons/KeyIcon';
+import TicketIcon from './icons/TicketIcon';
+import ImagePreviewModal from './ImagePreviewModal';
+import CurrencyDollarIcon from './icons/CurrencyDollarIcon';
+import ExclamationTriangleIcon from './icons/ExclamationTriangleIcon';
 
 // --- Helper Functions and Components ---
 

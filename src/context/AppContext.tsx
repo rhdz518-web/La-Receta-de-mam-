@@ -287,10 +287,14 @@ const AppProvider: React.FC<{children: ReactNode}> = ({ children }) => {
             onSnapshot(collection(db, 'cashOuts'), (snap) => processSnapshot(snap, 'cashOuts')),
             onSnapshot(doc(db, "settings", "main"), (doc) => {
                 if (doc.exists()) {
-                    dispatch({ type: 'SET_STATE_FROM_FIRESTORE', payload: doc.data() });
+                    const settingsData = doc.data();
+                    // Ensure auth state is not overwritten from DB
+                    delete settingsData.isAuthenticated;
+                    delete settingsData.currentAffiliate;
+                    dispatch({ type: 'SET_STATE_FROM_FIRESTORE', payload: settingsData });
                 } else {
                     // Initialize settings if they don't exist
-                    setDoc(doc(db, "settings", "main"), {
+                    const initialSettings = {
                         adminPassword: initialState.adminPassword,
                         adminPhoneNumber: initialState.adminPhoneNumber,
                         bankDetails: initialState.bankDetails,
@@ -298,7 +302,9 @@ const AppProvider: React.FC<{children: ReactNode}> = ({ children }) => {
                         publicAppUrl: initialState.publicAppUrl,
                         tortillaPrice: initialState.tortillaPrice,
                         tabVisibility: initialState.tabVisibility,
-                    });
+                    };
+                    setDoc(doc(db, "settings", "main"), initialSettings);
+                    dispatch({ type: 'SET_STATE_FROM_FIRESTORE', payload: initialSettings });
                 }
             })
         ];

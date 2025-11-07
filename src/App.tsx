@@ -1,11 +1,10 @@
 import React, { useState, useContext, useRef } from 'react';
-import { AppProvider, AppContext } from './context/AppContext.tsx';
-import CustomerView from './components/CustomerView.tsx';
-// FIX: Changed to a default import to resolve the module loading error.
-import AdminView from './components/AdminView.tsx';
-import AdminLogin from './components/AdminLogin.tsx';
-import AffiliateLogin from './components/AffiliateLogin.tsx';
-import AffiliateView from './components/AffiliateView.tsx';
+import { AppProvider, AppContext } from './context/AppContext';
+import CustomerView from './components/CustomerView';
+import AdminView from './components/AdminView';
+import AdminLogin from './components/AdminLogin';
+import AffiliateLogin from './components/AffiliateLogin';
+import AffiliateView from './components/AffiliateView';
 
 const Header: React.FC<{ onTitleClick: () => void, onLogoutClick: () => void, isLoggedIn: boolean, name: string }> = ({ onTitleClick, onLogoutClick, isLoggedIn, name }) => (
   <header className="bg-white text-brand-dark p-4 shadow-md sticky top-0 z-40">

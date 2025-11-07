@@ -1,21 +1,21 @@
 import React, { useState, useContext, useMemo, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
 import { Order, OrderStatus, PaymentMethod, InventoryChangeStatus, Affiliate, CashOutStatus, CashOut, InventoryChange } from '../types';
-import StatCard from './StatCard.tsx';
-import CashIcon from './icons/CashIcon.tsx';
-import ClipboardDocumentListIcon from './icons/ClipboardDocumentListIcon.tsx';
-import ChartBarIcon from './icons/ChartBarIcon.tsx';
-import CheckCircleIcon from './icons/CheckCircleIcon.tsx';
-import XCircleIcon from './icons/XCircleIcon.tsx';
-import ClockIcon from './icons/ClockIcon.tsx';
-import StoreIcon from './icons/StoreIcon.tsx';
-import CogIcon from './icons/CogIcon.tsx';
-import ImagePreviewModal from './ImagePreviewModal.tsx';
-import CurrencyDollarIcon from './icons/CurrencyDollarIcon.tsx';
-import WhatsAppIcon from './icons/WhatsAppIcon.tsx';
-import ArchiveBoxIcon from './icons/ArchiveBoxIcon.tsx';
-import InformationCircleIcon from './icons/InformationCircleIcon.tsx';
-import ExclamationTriangleIcon from './icons/ExclamationTriangleIcon.tsx';
+import StatCard from './StatCard';
+import CashIcon from './icons/CashIcon';
+import ClipboardDocumentListIcon from './icons/ClipboardDocumentListIcon';
+import ChartBarIcon from './icons/ChartBarIcon';
+import CheckCircleIcon from './icons/CheckCircleIcon';
+import XCircleIcon from './icons/XCircleIcon';
+import ClockIcon from './icons/ClockIcon';
+import StoreIcon from './icons/StoreIcon';
+import CogIcon from './icons/CogIcon';
+import ImagePreviewModal from './ImagePreviewModal';
+import CurrencyDollarIcon from './icons/CurrencyDollarIcon';
+import WhatsAppIcon from './icons/WhatsAppIcon';
+import ArchiveBoxIcon from './icons/ArchiveBoxIcon';
+import InformationCircleIcon from './icons/InformationCircleIcon';
+import ExclamationTriangleIcon from './icons/ExclamationTriangleIcon';
 
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(amount);
@@ -976,8 +976,8 @@ const AffiliateView: React.FC = () => {
                 <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                      <NavTabButton tabName="dashboard" icon={<ChartBarIcon className="w-5 h-5"/>}>Dashboard</NavTabButton>
                      <NavTabButton tabName="orders" icon={<ClipboardDocumentListIcon className="w-5 h-5"/>}>Pedidos</NavTabButton>
-                     <NavTabButton tabName="history" icon={<ArchiveBoxIcon className="w-5 h-5"/>}>Ventas</NavTabButton>
-                     <NavTabButton tabName="cashouts" icon={<CurrencyDollarIcon className="w-5 h-5"/>}>Cortes</NavTabButton>
+                     <NavTabButton tabName="history" icon={<ArchiveBoxIcon className="w-5 h-5"/>}>Ventas Finalizadas</NavTabButton>
+                     <NavTabButton tabName="cashouts" icon={<CurrencyDollarIcon className="w-5 h-5"/>}>Cortes de Caja</NavTabButton>
                      <NavTabButton tabName="inventory" icon={<StoreIcon className="w-5 h-5"/>}>Inventario</NavTabButton>
                      <NavTabButton tabName="settings" icon={<CogIcon className="w-5 h-5"/>}>Ajustes</NavTabButton>
                 </div>
