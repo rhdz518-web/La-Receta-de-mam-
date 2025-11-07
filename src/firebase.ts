@@ -1,6 +1,8 @@
-// @ts-nocheck
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc, increment as firestoreIncrement } from "firebase/firestore";
 
-// User's provided Firebase project configuration.
+// Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyCWurxet32JE4noxOzMtyS-EttxyWnRmzs",
   authDomain: "receta-bc982.firebaseapp.com",
@@ -11,10 +13,8 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-// The firebase object is available globally from the scripts in index.html
-if (!window.firebase.apps.length) {
-    window.firebase.initializeApp(firebaseConfig);
-}
+const app = initializeApp(firebaseConfig);
 
-export const db = window.firebase.firestore();
-export const increment = window.firebase.firestore.FieldValue.increment;
+// Export firestore instance and helpers
+export const db = getFirestore(app);
+export const increment = firestoreIncrement;

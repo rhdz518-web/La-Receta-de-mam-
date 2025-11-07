@@ -2,6 +2,8 @@ import React, { createContext, useReducer, useEffect, Dispatch, ReactNode } from
 import { AppState, Order, Affiliate, InventoryChange, OrderStatus, AffiliateStatus, InventoryChangeStatus, Referral, Coupon, ReferralStatus, User, CashOut, CashOutStatus } from '../types';
 import { DEFAULT_COMMISSION_PER_TORTILLA_CENTS, REWARD_TORTILLAS, TORTILLA_PRICE } from '../constants';
 import { db, increment } from '../firebase';
+import { collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc, writeBatch } from "firebase/firestore";
+
 
 // Define action types
 type Action =
@@ -29,13 +31,13 @@ type Action =
     | { type: 'AFFILIATE_CONFIRM_INVENTORY_CHANGE'; payload: { change: InventoryChange } }
     | { type: 'CANCEL_INVENTORY_REQUEST'; payload: { changeId: string } }
     | { type: 'UPDATE_SETTINGS'; payload: Partial<AppState> }
-    | { type: 'LOAD_STATE' }
+    | { type: 'LOAD_STATE' } // Kept for API compatibility, but functionally disabled
     | { type: 'SET_SUCCESS_MESSAGE'; payload: string }
     | { type: 'CLEAR_SUCCESS_MESSAGE' }
     | { type: 'UPDATE_AFFILIATE_BANK_DETAILS'; payload: { affiliateId: string; bankDetails: string } }
     | { type: 'PERFORM_CASHOUT'; payload: CashOut }
     | { type: 'AFFILIATE_CONFIRM_CASHOUT'; payload: { cashOutId: string } }
-    // New actions to set state from Firestore
+    // New action to set state from Firestore
     | { type: 'SET_STATE_FROM_FIRESTORE'; payload: Partial<AppState> };
 
 
@@ -92,26 +94,26 @@ const appReducer = (state: AppState, action: Action): AppState => {
 
         // ACTIONS THAT WRITE TO FIRESTORE
         case 'ADD_OR_UPDATE_USER':
-            db.collection('users').doc(action.payload.phone).set(action.payload, { merge: true });
+            setDoc(doc(db, "users", action.payload.phone), action.payload, { merge: true });
             return state;
         
         case 'ADD_ORDER': {
             const { id, ...orderData } = action.payload;
-            db.collection('orders').doc(id).set(orderData);
+            setDoc(doc(db, "orders", id), orderData);
             if (action.payload.couponUsed) {
-                db.collection('coupons').doc(action.payload.couponUsed).update({ isUsed: true });
+                updateDoc(doc(db, "coupons", action.payload.couponUsed), { isUsed: true });
             }
             return state;
         }
 
         case 'UPDATE_ORDER_STATUS': {
             const { order, status } = action.payload;
-            const orderRef = db.collection('orders').doc(order.id);
-            orderRef.update({ status });
+            const orderRef = doc(db, "orders", order.id);
+            updateDoc(orderRef, { status });
 
             if (status === OrderStatus.Finished) {
-                const affiliateRef = db.collection('affiliates').doc(order.affiliateId);
-                affiliateRef.update({ inventory: increment(-order.quantity) });
+                const affiliateRef = doc(db, "affiliates", order.affiliateId);
+                updateDoc(affiliateRef, { inventory: increment(-order.quantity) });
             }
             
             const referral = state.referrals.find(r => r.refereeOrderId === order.id);
@@ -119,120 +121,119 @@ const appReducer = (state: AppState, action: Action): AppState => {
                  let newStatus = referral.status;
                  if (status === OrderStatus.Cancelled) newStatus = ReferralStatus.Cancelled;
                  else if (status === OrderStatus.Active && referral.status === ReferralStatus.Cancelled) newStatus = ReferralStatus.ActiveOrder;
-                 db.collection('referrals').doc(referral.id).update({ status: newStatus });
+                 updateDoc(doc(db, "referrals", referral.id), { status: newStatus });
             }
             return state;
         }
 
         case 'CONFIRM_TRANSFER_PAYMENT':
-            db.collection('orders').doc(action.payload.orderId).update({ status: OrderStatus.Active });
+            updateDoc(doc(db, "orders", action.payload.orderId), { status: OrderStatus.Active });
             return { ...state, successMessage: `Pago del pedido confirmado. El vendedor puede proceder.` };
 
         case 'ADD_REFERRAL': {
             const { id, ...referralData } = action.payload;
-            db.collection('referrals').doc(id).set(referralData);
+            setDoc(doc(db, "referrals", id), referralData);
             return state;
         }
 
         case 'COMPLETE_REFERRAL': {
             const { referral, couponCode } = action.payload;
-            db.collection('referrals').doc(referral.id).update({ status: ReferralStatus.Completed });
+            updateDoc(doc(db, "referrals", referral.id), { status: ReferralStatus.Completed });
 
-            const newCoupon: Omit<Coupon, 'id'> = {
+            const newCoupon: Omit<Coupon, 'code'> & { code: string } = {
                 code: couponCode,
                 isUsed: false,
                 rewardAmount: REWARD_TORTILLAS * state.tortillaPrice,
                 generatedForPhone: referral.referrerPhone,
                 isActive: true
             };
-            db.collection('coupons').doc(couponCode).set(newCoupon);
+            setDoc(doc(db, "coupons", couponCode), newCoupon);
             return state;
         }
 
         case 'TOGGLE_COUPON_STATUS':
-            db.collection('coupons').doc(action.payload.coupon.code).update({ isActive: !action.payload.coupon.isActive });
+            updateDoc(doc(db, "coupons", action.payload.coupon.code), { isActive: !action.payload.coupon.isActive });
             return state;
 
         case 'DELETE_COUPON':
-            db.collection('coupons').doc(action.payload.couponCode).delete();
+            deleteDoc(doc(db, "coupons", action.payload.couponCode));
             return { ...state, successMessage: `Cupón "${action.payload.couponCode}" eliminado.` };
 
         case 'APPLY_FOR_AFFILIATE': {
             const { id, ...affiliateData } = action.payload;
-            db.collection('affiliates').doc(id).set(affiliateData);
+            setDoc(doc(db, "affiliates", id), affiliateData);
             return state;
         }
 
         case 'UPDATE_AFFILIATE_STATUS':
-            db.collection('affiliates').doc(action.payload.affiliateId).update({ status: action.payload.status });
+            updateDoc(doc(db, "affiliates", action.payload.affiliateId), { status: action.payload.status });
             return state;
         
         case 'TOGGLE_AFFILIATE_DELIVERY':
-            db.collection('affiliates').doc(action.payload.affiliate.id).update({ hasDeliveryService: !action.payload.affiliate.hasDeliveryService });
+            updateDoc(doc(db, "affiliates", action.payload.affiliate.id), { hasDeliveryService: !action.payload.affiliate.hasDeliveryService });
             return state;
 
         case 'UPDATE_AFFILIATE_SETTINGS':
-            db.collection('affiliates').doc(action.payload.affiliateId).update({
+            updateDoc(doc(db, "affiliates", action.payload.affiliateId), {
                 address: action.payload.address,
                 deliveryCost: action.payload.deliveryCost
             });
             return state;
 
         case 'UPDATE_AFFILIATE_BANK_DETAILS':
-            db.collection('affiliates').doc(action.payload.affiliateId).update({
+            updateDoc(doc(db, "affiliates", action.payload.affiliateId), {
                 bankDetails: action.payload.bankDetails
             });
             return state;
 
         case 'UPDATE_AFFILIATE_SCHEDULE':
-             db.collection('affiliates').doc(action.payload.affiliateId).update({ schedule: action.payload.schedule });
+             updateDoc(doc(db, "affiliates", action.payload.affiliateId), { schedule: action.payload.schedule });
             return state;
 
         case 'TOGGLE_TEMPORARY_CLOSED': {
             const { affiliate } = action.payload;
-            db.collection('affiliates').doc(affiliate.id).update({ isTemporarilyClosed: !affiliate.isTemporarilyClosed });
+            updateDoc(doc(db, "affiliates", affiliate.id), { isTemporarilyClosed: !affiliate.isTemporarilyClosed });
             const message = !affiliate.isTemporarilyClosed ? 'Has cerrado tu tienda temporalmente.' : '¡Has abierto tu tienda! Ya puedes recibir pedidos.';
             return { ...state, successMessage: message };
         }
         
         case 'DELETE_AFFILIATE':
-            db.collection('affiliates').doc(action.payload.affiliateId).delete();
+            deleteDoc(doc(db, "affiliates", action.payload.affiliateId));
             return { ...state, successMessage: `Vendedor eliminado con éxito.` };
 
         case 'ADD_INVENTORY_CHANGE': {
             const { id, ...changeData } = action.payload;
-            db.collection('inventoryChanges').doc(id).set(changeData);
+            setDoc(doc(db, "inventoryChanges", id), changeData);
             if (changeData.status !== InventoryChangeStatus.Pending) { // Admin adjustment
                  return { ...state, successMessage: 'Ajuste de inventario enviado para confirmación del vendedor.' };
             }
-            // Affiliate request message is set in component
             return state;
         }
         
         case 'RESOLVE_INVENTORY_CHANGE':
-            db.collection('inventoryChanges').doc(action.payload.changeId).update({ status: action.payload.status });
+            updateDoc(doc(db, "inventoryChanges", action.payload.changeId), { status: action.payload.status });
             return state;
 
         case 'AFFILIATE_CONFIRM_INVENTORY_CHANGE': {
             const { change } = action.payload;
             if (change.status !== InventoryChangeStatus.Approved) return state;
 
-            db.collection('inventoryChanges').doc(change.id).update({ status: InventoryChangeStatus.Completed });
-            db.collection('affiliates').doc(change.affiliateId).update({ inventory: increment(change.amount) });
+            updateDoc(doc(db, "inventoryChanges", change.id), { status: InventoryChangeStatus.Completed });
+            updateDoc(doc(db, "affiliates", change.affiliateId), { inventory: increment(change.amount) });
             return { ...state, successMessage: 'Inventario confirmado y actualizado.' };
         }
 
         case 'CANCEL_INVENTORY_REQUEST':
-            db.collection('inventoryChanges').doc(action.payload.changeId).delete();
+            deleteDoc(doc(db, "inventoryChanges", action.payload.changeId));
             return { ...state, successMessage: 'Solicitud de inventario cancelada.' };
             
         case 'PERFORM_CASHOUT': {
             const { id, ...cashOutData } = action.payload;
-            db.collection('cashOuts').doc(id).set(cashOutData);
+            setDoc(doc(db, "cashOuts", id), cashOutData);
 
-            const batch = db.batch();
+            const batch = writeBatch(db);
             cashOutData.ordersCoveredIds.forEach(orderId => {
-                const orderRef = db.collection('orders').doc(orderId);
+                const orderRef = doc(db, "orders", orderId);
                 batch.update(orderRef, { settledInCashOutId: id });
             });
             batch.commit();
@@ -241,11 +242,11 @@ const appReducer = (state: AppState, action: Action): AppState => {
         }
         
         case 'AFFILIATE_CONFIRM_CASHOUT':
-            db.collection('cashOuts').doc(action.payload.cashOutId).update({ status: CashOutStatus.Completed });
+            updateDoc(doc(db, "cashOuts", action.payload.cashOutId), { status: CashOutStatus.Completed });
              return { ...state, successMessage: 'Recepción de transferencia confirmada.' };
 
         case 'UPDATE_SETTINGS':
-            db.collection('settings').doc('main').set(action.payload, { merge: true });
+            setDoc(doc(db, "settings", "main"), action.payload, { merge: true });
             return state;
 
         // UI-ONLY ACTIONS
@@ -277,19 +278,19 @@ const AppProvider: React.FC<{children: ReactNode}> = ({ children }) => {
         };
         
         const unsubs = [
-            db.collection('affiliates').onSnapshot((snap: any) => processSnapshot(snap, 'affiliates')),
-            db.collection('orders').onSnapshot((snap: any) => processSnapshot(snap, 'orders')),
-            db.collection('users').onSnapshot((snap: any) => processSnapshot(snap, 'users')),
-            db.collection('referrals').onSnapshot((snap: any) => processSnapshot(snap, 'referrals')),
-            db.collection('coupons').onSnapshot((snap: any) => processSnapshot(snap, 'coupons')),
-            db.collection('inventoryChanges').onSnapshot((snap: any) => processSnapshot(snap, 'inventoryChanges')),
-            db.collection('cashOuts').onSnapshot((snap: any) => processSnapshot(snap, 'cashOuts')),
-            db.collection('settings').doc('main').onSnapshot((doc: any) => {
-                if (doc.exists) {
+            onSnapshot(collection(db, 'affiliates'), (snap) => processSnapshot(snap, 'affiliates')),
+            onSnapshot(collection(db, 'orders'), (snap) => processSnapshot(snap, 'orders')),
+            onSnapshot(collection(db, 'users'), (snap) => processSnapshot(snap, 'users')),
+            onSnapshot(collection(db, 'referrals'), (snap) => processSnapshot(snap, 'referrals')),
+            onSnapshot(collection(db, 'coupons'), (snap) => processSnapshot(snap, 'coupons')),
+            onSnapshot(collection(db, 'inventoryChanges'), (snap) => processSnapshot(snap, 'inventoryChanges')),
+            onSnapshot(collection(db, 'cashOuts'), (snap) => processSnapshot(snap, 'cashOuts')),
+            onSnapshot(doc(db, "settings", "main"), (doc) => {
+                if (doc.exists()) {
                     dispatch({ type: 'SET_STATE_FROM_FIRESTORE', payload: doc.data() });
                 } else {
                     // Initialize settings if they don't exist
-                    db.collection('settings').doc('main').set({
+                    setDoc(doc(db, "settings", "main"), {
                         adminPassword: initialState.adminPassword,
                         adminPhoneNumber: initialState.adminPhoneNumber,
                         bankDetails: initialState.bankDetails,
